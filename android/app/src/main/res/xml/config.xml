@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-  <access origin="*" />
-  
-  
+<widget id="com.spectrascope.nightsessions" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+  <name>SpectraScope: Night Sessions</name>
+  <description>SpectraScope Night Sessions mobile app</description>
+  <author email="support@spectrascope.com" href="https://spectrascope.com/">SpectraScope Team</author>
 </widget>

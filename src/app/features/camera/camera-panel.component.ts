@@ -168,7 +168,7 @@ export class CameraPanelComponent implements OnDestroy {
 
   private readonly pauseHandler = (): void => { void this.camera.stopPreview(); };
   private readonly resumeHandler = (): void => {
-    if (this.permissions.granted()) {
+    if (this.permissions.granted() && !this.camera.state().active) {
       void this.camera.startPreview('camera-preview');
     }
   };
