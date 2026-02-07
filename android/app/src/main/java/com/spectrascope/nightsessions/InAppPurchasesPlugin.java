@@ -148,9 +148,6 @@ public class InAppPurchasesPlugin extends Plugin implements PurchasesUpdatedList
                 .setProductList(productList)
                 .build();
 
-        // Store call for use in onPurchasesUpdated.
-        bridge.saveCall(call);
-
         billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsList) -> {
             if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK || productDetailsList.isEmpty()) {
                 call.reject("Product not found");
@@ -170,6 +167,8 @@ public class InAppPurchasesPlugin extends Plugin implements PurchasesUpdatedList
 
             Activity activity = getActivity();
             if (activity != null) {
+                // Only save the call after we successfully launch the billing flow.
+                bridge.saveCall(call);
                 billingClient.launchBillingFlow(activity, flowParams);
             } else {
                 call.reject("Activity not available");
@@ -188,29 +187,37 @@ public class InAppPurchasesPlugin extends Plugin implements PurchasesUpdatedList
             }
 
             // Resolve the saved purchase call.
-            PluginCall savedCall = bridge.getSavedCall(null);
+            PluginCall savedCall = bridge.getSavedCall();
             if (savedCall != null) {
-                Purchase firstPurchase = purchases.get(0);
                 JSObject result = new JSObject();
-                result.put("purchase", purchaseToJson(firstPurchase));
+                if (!purchases.isEmpty()) {
+                    Purchase firstPurchase = purchases.get(0);
+                    result.put("purchase", purchaseToJson(firstPurchase));
+                } else {
+                    // No purchases returned despite OK response; resolve with null purchase.
+                    result.put("purchase", JSObject.NULL);
+                }
                 savedCall.resolve(result);
+                bridge.releaseCall(savedCall);
             }
         } else if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.USER_CANCELED) {
             JSObject result = new JSObject();
             result.put("purchase", JSObject.NULL);
 
-            PluginCall savedCall = bridge.getSavedCall(null);
+            PluginCall savedCall = bridge.getSavedCall();
             if (savedCall != null) {
                 savedCall.resolve(result);
+                bridge.releaseCall(savedCall);
             }
         } else {
             JSObject event = new JSObject();
             event.put("message", billingResult.getDebugMessage());
             notifyListeners("purchaseError", event);
 
-            PluginCall savedCall = bridge.getSavedCall(null);
+            PluginCall savedCall = bridge.getSavedCall();
             if (savedCall != null) {
                 savedCall.reject("Purchase failed: " + billingResult.getDebugMessage());
+                bridge.releaseCall(savedCall);
             }
         }
     }
