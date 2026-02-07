@@ -1,5 +1,4 @@
 import { Injectable, signal } from '@angular/core';
-import { CameraPreview } from '@capacitor-community/camera-preview';
 
 @Injectable({ providedIn: 'root' })
 export class PermissionService {
@@ -13,8 +12,7 @@ export class PermissionService {
 
   async requestAll(): Promise<void> {
     try {
-      await CameraPreview.requestPermissions();
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       stream.getTracks().forEach((track) => track.stop());
       this.grantedSignal.set(true);
       this.statusSignal.set('Permissions granted.');

@@ -19,7 +19,6 @@
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
     "@capacitor-community/camera-preview": "^6.0.0",
-    "@capacitor-community/in-app-purchases": "^6.0.0",
     "@capacitor/core": "^6.0.0",
     "rxjs": "^7.8.1",
     "tslib": "^2.6.2",

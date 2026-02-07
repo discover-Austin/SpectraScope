@@ -1,39 +1,14 @@
 import { Injectable, signal } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
 import { BillingStatus } from './billing-status.model';
-import { InAppPurchases } from '@capacitor-community/in-app-purchases';
-
-interface IapProduct {
-  productId: string;
-  title?: string;
-  description?: string;
-  price?: string;
-}
-
-interface IapPurchase {
-  productId: string;
-  transactionId?: string;
-  acknowledged?: boolean;
-}
-
-interface IapPlugin {
-  initialize(): Promise<void>;
-  getProducts(options: { productIds: string[] }): Promise<{ products: IapProduct[] }>;
-  purchase(options: { productId: string }): Promise<{ purchase: IapPurchase | null }>;
-  restorePurchases(): Promise<{ purchases: IapPurchase[] }>;
-  finishTransaction(options: { purchase: IapPurchase; isConsumable: boolean }): Promise<void>;
-  addListener(
-    eventName: 'purchaseUpdated' | 'purchaseError',
-    listenerFunc: (event: { purchase?: IapPurchase; message?: string }) => void
-  ): Promise<{ remove: () => Promise<void> }>;
-}
+import { InAppPurchases, IapProduct, IapPurchase } from '../plugins/in-app-purchases';
 
 const PRODUCT_ID = 'spectrascope_pro';
 const STORAGE_KEY = 'spectrascope_pro_owned';
 
 @Injectable({ providedIn: 'root' })
 export class MonetizationService {
-  private readonly iap = InAppPurchases as unknown as IapPlugin;
+  private readonly iap = InAppPurchases;
   private readonly isProOwnedSignal = signal(this.readOwned());
   private readonly statusSignal = signal<BillingStatus | null>(null);
   private readonly readySignal = signal(false);
@@ -95,7 +70,7 @@ export class MonetizationService {
   async restorePurchases(): Promise<void> {
     try {
       const result = await this.iap.restorePurchases();
-      const owned = result.purchases.some((purchase) => purchase.productId === PRODUCT_ID);
+      const owned = result.purchases.some((purchase: IapPurchase) => purchase.productId === PRODUCT_ID);
       if (owned) {
         this.setOwned(true);
       }
@@ -127,13 +102,13 @@ export class MonetizationService {
   }
 
   private async attachListeners(): Promise<void> {
-    await this.iap.addListener('purchaseUpdated', async (event) => {
+    await this.iap.addListener('purchaseUpdated', async (event: { purchase?: IapPurchase }) => {
       if (event.purchase) {
         await this.acknowledge(event.purchase);
       }
     });
 
-    await this.iap.addListener('purchaseError', (event) => {
+    await this.iap.addListener('purchaseError', (event: { message?: string }) => {
       this.statusSignal.set({
         message: event.message ?? 'A billing error occurred.',
         severity: 'warning'

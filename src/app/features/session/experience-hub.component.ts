@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { NgIf } from '@angular/common';
 import { CameraPanelComponent } from '../camera/camera-panel.component';
 import { AudioVisualizerComponent } from '../audio/audio-visualizer.component';
 import { SessionControlsComponent } from './session-controls.component';
@@ -10,6 +11,7 @@ import { DisclaimerService } from '../../core/services/disclaimer.service';
   selector: 'app-experience-hub',
   standalone: true,
   imports: [
+    NgIf,
     CameraPanelComponent,
     AudioVisualizerComponent,
     SessionControlsComponent,

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, effect, inject } from '@angular/core';
+import { Component, OnDestroy, effect, inject } from '@angular/core';
 import { NgIf, NgFor } from '@angular/common';
 import { CameraService } from '../../core/services/camera.service';
 import { GalleryService } from '../../core/services/gallery.service';
@@ -159,14 +159,21 @@ import { PermissionService } from '../../core/services/permission.service';
     `
   ]
 })
-export class CameraPanelComponent implements OnInit, OnDestroy {
+export class CameraPanelComponent implements OnDestroy {
   readonly camera = inject(CameraService);
   readonly gallery = inject(GalleryService);
   readonly monetization = inject(MonetizationService);
   readonly permissions = inject(PermissionService);
   readonly advancedFilters = ['Thermal bloom', 'Spectral edge', 'Echo trace'];
 
-  ngOnInit(): void {
+  private readonly pauseHandler = (): void => { void this.camera.stopPreview(); };
+  private readonly resumeHandler = (): void => {
+    if (this.permissions.granted()) {
+      void this.camera.startPreview('camera-preview');
+    }
+  };
+
+  constructor() {
     effect(() => {
       if (this.permissions.granted()) {
         void this.camera.startPreview('camera-preview');
@@ -174,10 +181,14 @@ export class CameraPanelComponent implements OnInit, OnDestroy {
         void this.camera.stopPreview();
       }
     });
+    document.addEventListener('pause', this.pauseHandler);
+    document.addEventListener('resume', this.resumeHandler);
   }
 
   ngOnDestroy(): void {
     void this.camera.stopPreview();
+    document.removeEventListener('pause', this.pauseHandler);
+    document.removeEventListener('resume', this.resumeHandler);
   }
 
   async capture(): Promise<void> {

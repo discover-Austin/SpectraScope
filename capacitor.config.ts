@@ -3,8 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.spectrascope.nightsessions',
   appName: 'SpectraScope: Night Sessions',
-  webDir: 'dist/spectrascope',
-  bundledWebRuntime: false
+  webDir: 'dist/spectrascope/browser'
 };
 
 export default config;

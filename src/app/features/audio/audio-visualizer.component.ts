@@ -1,12 +1,12 @@
-import { Component, OnDestroy, OnInit, effect, inject } from '@angular/core';
-import { NgFor } from '@angular/common';
+import { Component, OnDestroy, effect, inject } from '@angular/core';
+import { NgFor, NgIf } from '@angular/common';
 import { AudioSignalService } from '../../core/services/audio-signal.service';
 import { PermissionService } from '../../core/services/permission.service';
 
 @Component({
   selector: 'app-audio-visualizer',
   standalone: true,
-  imports: [NgFor],
+  imports: [NgFor, NgIf],
   template: `
     <section class="panel">
       <header>
@@ -88,15 +88,21 @@ import { PermissionService } from '../../core/services/permission.service';
     `
   ]
 })
-export class AudioVisualizerComponent implements OnInit, OnDestroy {
+export class AudioVisualizerComponent implements OnDestroy {
   readonly signal = inject(AudioSignalService);
   readonly permissions = inject(PermissionService);
   readonly bars = Array.from({ length: 18 });
   barHeights = this.bars.map(() => 40);
 
   private rafId: number | null = null;
+  private readonly pauseHandler = (): void => { this.signal.stop(); };
+  private readonly resumeHandler = (): void => {
+    if (this.permissions.granted()) {
+      void this.signal.start();
+    }
+  };
 
-  ngOnInit(): void {
+  constructor() {
     effect(() => {
       if (this.permissions.granted()) {
         void this.signal.start();
@@ -105,6 +111,8 @@ export class AudioVisualizerComponent implements OnInit, OnDestroy {
       }
     });
     this.animate();
+    document.addEventListener('pause', this.pauseHandler);
+    document.addEventListener('resume', this.resumeHandler);
   }
 
   ngOnDestroy(): void {
@@ -112,6 +120,8 @@ export class AudioVisualizerComponent implements OnInit, OnDestroy {
     if (this.rafId) {
       cancelAnimationFrame(this.rafId);
     }
+    document.removeEventListener('pause', this.pauseHandler);
+    document.removeEventListener('resume', this.resumeHandler);
   }
 
   private animate(): void {
