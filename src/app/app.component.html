@@ -1,0 +1,55 @@
+<div class="shell">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">SpectraScope: Night Sessions</p>
+      <h1>Immersive simulation sessions</h1>
+    </div>
+    <button class="ghost" type="button" (click)="restart()" *ngIf="hasCompleted()">
+      Review briefing
+    </button>
+  </header>
+
+  <section class="onboarding" *ngIf="!hasCompleted()">
+    <div class="step-card">
+      <h2>{{ steps[activeStep()].title }}</h2>
+      <p>{{ steps[activeStep()].body }}</p>
+
+      <ng-container *ngIf="steps[activeStep()].id === 'permissions'">
+        <div class="permission-copy">
+          <div>
+            <h3>Camera</h3>
+            <p>{{ permissionService.cameraCopy }}</p>
+          </div>
+          <div>
+            <h3>Microphone</h3>
+            <p>{{ permissionService.microphoneCopy }}</p>
+          </div>
+          <p class="muted">No audio or video is stored or transmitted.</p>
+          <button type="button" class="secondary" (click)="openPermissions()">Enable permissions</button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="steps[activeStep()].id === 'acknowledgment'">
+        <label class="ack">
+          <input type="checkbox" (change)="toggleAcknowledgement($event.target.checked)">
+          <span>I understand this is a fictional simulation experience.</span>
+        </label>
+      </ng-container>
+
+      <div class="actions">
+        <button type="button" class="secondary" (click)="retreat()" [disabled]="activeStep() === 0">
+          Back
+        </button>
+        <button type="button" (click)="advance()" [disabled]="!canAdvance()">
+          {{ isFinalStep() ? 'Enter hub' : 'Continue' }}
+        </button>
+      </div>
+
+      <p class="disclaimer">{{ disclaimer }}</p>
+    </div>
+  </section>
+
+  <main *ngIf="hasCompleted()" class="hub">
+    <router-outlet></router-outlet>
+  </main>
+</div>
