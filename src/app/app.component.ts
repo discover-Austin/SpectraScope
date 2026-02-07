@@ -23,9 +23,7 @@ export class AppComponent {
   readonly steps = this.onboardingService.steps;
   readonly activeStep = this.onboardingService.activeStep;
   readonly hasCompleted = this.onboardingService.hasCompleted;
-  readonly canAdvance = computed(() =>
-    this.activeStep() < this.steps.length - 1 && this.onboardingService.canAdvance()
-  );
+  readonly canAdvance = computed(() => this.onboardingService.canAdvance());
   readonly isFinalStep = computed(() => this.activeStep() === this.steps.length - 1);
 
   constructor() {

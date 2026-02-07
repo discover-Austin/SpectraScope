@@ -1,0 +1,5 @@
+{
+	"appId": "com.spectrascope.nightsessions",
+	"appName": "SpectraScope: Night Sessions",
+	"webDir": "dist/spectrascope/browser"
+}

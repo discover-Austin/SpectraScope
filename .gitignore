@@ -1,4 +1,5 @@
 node_modules/
 dist/
 .capacitor/
+.angular/
 .DS_Store

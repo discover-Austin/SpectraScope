@@ -32,7 +32,7 @@
 
       <ng-container *ngIf="steps[activeStep()].id === 'acknowledgment'">
         <label class="ack">
-          <input type="checkbox" (change)="toggleAcknowledgement($event.target.checked)">
+          <input type="checkbox" #ackBox (change)="toggleAcknowledgement(ackBox.checked)">
           <span>I understand this is a fictional simulation experience.</span>
         </label>
       </ng-container>
