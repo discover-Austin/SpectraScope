@@ -1,0 +1,18 @@
+{
+  "name": "codex-prompt-generator",
+  "version": "1.0.0",
+  "description": "Generates structured Codex master prompts from a ZIP codebase and task specification",
+  "main": "src/index.js",
+  "bin": {
+    "codex-prompt-generator": "src/index.js"
+  },
+  "scripts": {
+    "generate": "node src/index.js",
+    "test": "node src/test.js"
+  },
+  "keywords": ["codex", "prompt", "generator"],
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
