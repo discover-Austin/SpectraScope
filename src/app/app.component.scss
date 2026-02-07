@@ -1,0 +1,88 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 2.5rem clamp(1.5rem, 4vw, 3.5rem);
+  gap: 2rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.onboarding {
+  display: grid;
+  place-items: center;
+}
+
+.step-card {
+  background: var(--panel);
+  border-radius: 24px;
+  padding: clamp(2rem, 4vw, 3rem);
+  max-width: 720px;
+  width: 100%;
+  display: grid;
+  gap: 1.5rem;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+}
+
+.step-card h2 {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.permission-copy {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.permission-copy h3 {
+  font-size: 1rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.ack {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.disclaimer {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+}
+
+.hub {
+  display: grid;
+  gap: 2rem;
+}

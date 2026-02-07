@@ -1,0 +1,126 @@
+import { Component, OnDestroy, OnInit, effect, inject } from '@angular/core';
+import { NgFor } from '@angular/common';
+import { AudioSignalService } from '../../core/services/audio-signal.service';
+import { PermissionService } from '../../core/services/permission.service';
+
+@Component({
+  selector: 'app-audio-visualizer',
+  standalone: true,
+  imports: [NgFor],
+  template: `
+    <section class="panel">
+      <header>
+        <h2>Signal response</h2>
+        <p class="muted">Reactive waveform</p>
+      </header>
+      <div class="waveform">
+        <div
+          class="line"
+          *ngFor="let bar of bars; let i = index"
+          [style.height.%]="barHeights[i]"
+        ></div>
+      </div>
+      <div class="indicators">
+        <span>Ambient pulse</span>
+        <span class="muted" *ngIf="signal.state().active">Live amplitude</span>
+        <span class="muted" *ngIf="!signal.state().active && permissions.granted()">
+          No recording
+        </span>
+        <span class="muted" *ngIf="!permissions.granted()">Microphone permission required.</span>
+      </div>
+    </section>
+  `,
+  styles: [
+    `
+      .panel {
+        background: var(--panel);
+        border-radius: 20px;
+        padding: 1.5rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .waveform {
+        display: grid;
+        grid-auto-flow: column;
+        gap: 6px;
+        height: 140px;
+        align-items: end;
+      }
+
+      .line {
+        width: 8px;
+        border-radius: 6px;
+        background: linear-gradient(180deg, rgba(106, 208, 255, 0.8), rgba(106, 208, 255, 0.2));
+        height: calc(30% + (var(--rand, 0.6) * 70%));
+        animation: pulse 2.5s ease-in-out infinite;
+      }
+
+      .line:nth-child(odd) {
+        animation-delay: 0.4s;
+      }
+
+      .indicators {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scaleY(0.7);
+        }
+        50% {
+          transform: scaleY(1.1);
+        }
+      }
+    `
+  ]
+})
+export class AudioVisualizerComponent implements OnInit, OnDestroy {
+  readonly signal = inject(AudioSignalService);
+  readonly permissions = inject(PermissionService);
+  readonly bars = Array.from({ length: 18 });
+  barHeights = this.bars.map(() => 40);
+
+  private rafId: number | null = null;
+
+  ngOnInit(): void {
+    effect(() => {
+      if (this.permissions.granted()) {
+        void this.signal.start();
+      } else {
+        this.signal.stop();
+      }
+    });
+    this.animate();
+  }
+
+  ngOnDestroy(): void {
+    this.signal.stop();
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+    }
+  }
+
+  private animate(): void {
+    const amplitude = this.signal.state().amplitude;
+    this.barHeights = this.bars.map((_, index) => {
+      const offset = 30 + index * 3;
+      const variance = Math.max(15, Math.min(90, (amplitude * 120 + offset) % 90));
+      return variance;
+    });
+    this.rafId = requestAnimationFrame(() => this.animate());
+  }
+}
