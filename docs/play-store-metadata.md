@@ -1,7 +1,7 @@
 # SpectraScope: Night Sessions — Play Store Metadata
 
 ## Short description
-Immersive paranormal-style simulations with cinematic visuals and reactive audio — built for entertainment only.
+Immersive paranormal-style fictional simulations with cinematic visuals and reactive audio — built for entertainment only.
 
 ## Full description
 SpectraScope: Night Sessions delivers atmospheric simulation sessions inspired by paranormal investigation aesthetics.
@@ -9,7 +9,7 @@ Every scene is crafted with cinematic authenticity while remaining purely fictio
 
 Highlights:
 - Live camera preview with cinematic overlays and visual noise
-- Reactive audio visualizer driven by live amplitude
+- Reactive audio visualizer driven by live amplitude (fictional simulation only — no real signal detection)
 - Timed night sessions with intensity controls
 - Local gallery for manual captures only
 
@@ -31,3 +31,5 @@ Optional non-consumable purchase: SpectraScope Pro
 - Unlocks advanced visual filters
 - Extends session durations
 - Enables custom intensity presets
+
+All features are part of a fictional simulation experience. No paranormal detection or verification is performed.

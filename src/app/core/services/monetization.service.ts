@@ -70,8 +70,13 @@ export class MonetizationService {
   async restorePurchases(): Promise<void> {
     try {
       const result = await this.iap.restorePurchases();
-      const owned = result.purchases.some((purchase: IapPurchase) => purchase.productId === PRODUCT_ID);
-      if (owned) {
+      for (const purchase of result.purchases) {
+        if (purchase.productId !== PRODUCT_ID) {
+          continue;
+        }
+        if (!purchase.acknowledged) {
+          await this.iap.finishTransaction({ purchase, isConsumable: false });
+        }
         this.setOwned(true);
       }
     } catch (error) {
