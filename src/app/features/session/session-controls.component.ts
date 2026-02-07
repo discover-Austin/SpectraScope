@@ -157,9 +157,6 @@ export class SessionControlsComponent {
   }
 
   applyPreset(value: number): void {
-    if (!this.monetization.isProOwned()) {
-      return;
-    }
-    this.session.setIntensity(value);
+    this.session.applyPreset(value);
   }
 }

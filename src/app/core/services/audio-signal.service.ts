@@ -41,6 +41,7 @@ export class AudioSignalService {
       this.rafId = null;
     }
     this.mediaStream?.getTracks().forEach((track) => track.stop());
+    this.mediaStream = null;
     this.audioContext?.close();
     this.audioContext = null;
     this.analyser = null;

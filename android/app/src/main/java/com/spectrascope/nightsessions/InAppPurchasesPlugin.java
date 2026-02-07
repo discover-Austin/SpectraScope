@@ -3,6 +3,7 @@ package com.spectrascope.nightsessions;
 import android.app.Activity;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.android.billingclient.api.AcknowledgePurchaseParams;
 import com.android.billingclient.api.BillingClient;
@@ -31,6 +32,8 @@ import java.util.List;
 public class InAppPurchasesPlugin extends Plugin implements PurchasesUpdatedListener {
 
     private BillingClient billingClient;
+    @Nullable
+    private String purchaseCallbackId;
 
     @PluginMethod
     public void initialize(PluginCall call) {
@@ -148,12 +151,13 @@ public class InAppPurchasesPlugin extends Plugin implements PurchasesUpdatedList
                 .setProductList(productList)
                 .build();
 
-        // Store call for use in onPurchasesUpdated.
+        call.setKeepAlive(true);
+        purchaseCallbackId = call.getCallbackId();
         bridge.saveCall(call);
 
         billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsList) -> {
             if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK || productDetailsList.isEmpty()) {
-                call.reject("Product not found");
+                releasePurchaseCall(call, "Product not found", false);
                 return;
             }
 
@@ -172,45 +176,44 @@ public class InAppPurchasesPlugin extends Plugin implements PurchasesUpdatedList
             if (activity != null) {
                 billingClient.launchBillingFlow(activity, flowParams);
             } else {
-                call.reject("Activity not available");
+                releasePurchaseCall(call, "Activity not available", false);
             }
         });
     }
 
     @Override
     public void onPurchasesUpdated(@NonNull BillingResult billingResult, List<Purchase> purchases) {
+        PluginCall savedCall = getSavedPurchaseCall();
+
         if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && purchases != null) {
             for (Purchase purchase : purchases) {
+                if (purchase.getPurchaseState() == Purchase.PurchaseState.PURCHASED && !purchase.isAcknowledged()) {
+                    acknowledgePurchaseNatively(purchase);
+                }
+
                 JSObject event = new JSObject();
-                JSObject purchaseObj = purchaseToJson(purchase);
-                event.put("purchase", purchaseObj);
+                event.put("purchase", purchaseToJson(purchase));
                 notifyListeners("purchaseUpdated", event);
             }
 
-            // Resolve the saved purchase call.
-            PluginCall savedCall = bridge.getSavedCall(null);
-            if (savedCall != null) {
-                Purchase firstPurchase = purchases.get(0);
+            if (savedCall != null && !purchases.isEmpty()) {
                 JSObject result = new JSObject();
-                result.put("purchase", purchaseToJson(firstPurchase));
-                savedCall.resolve(result);
+                result.put("purchase", purchaseToJson(purchases.get(0)));
+                releasePurchaseCall(savedCall, result);
             }
         } else if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.USER_CANCELED) {
-            JSObject result = new JSObject();
-            result.put("purchase", JSObject.NULL);
-
-            PluginCall savedCall = bridge.getSavedCall(null);
             if (savedCall != null) {
-                savedCall.resolve(result);
+                JSObject result = new JSObject();
+                result.put("purchase", JSObject.NULL);
+                releasePurchaseCall(savedCall, result);
             }
         } else {
             JSObject event = new JSObject();
             event.put("message", billingResult.getDebugMessage());
             notifyListeners("purchaseError", event);
 
-            PluginCall savedCall = bridge.getSavedCall(null);
             if (savedCall != null) {
-                savedCall.reject("Purchase failed: " + billingResult.getDebugMessage());
+                releasePurchaseCall(savedCall, "Purchase failed: " + billingResult.getDebugMessage(), false);
             }
         }
     }
@@ -234,7 +237,12 @@ public class InAppPurchasesPlugin extends Plugin implements PurchasesUpdatedList
 
             JSONArray purchases = new JSONArray();
             for (Purchase purchase : purchasesList) {
-                purchases.put(purchaseToJson(purchase));
+                if (purchase.getPurchaseState() == Purchase.PurchaseState.PURCHASED) {
+                    if (!purchase.isAcknowledged()) {
+                        acknowledgePurchaseNatively(purchase);
+                    }
+                    purchases.put(purchaseToJson(purchase));
+                }
             }
 
             JSObject result = new JSObject();
@@ -267,12 +275,45 @@ public class InAppPurchasesPlugin extends Plugin implements PurchasesUpdatedList
                 .build();
 
         billingClient.acknowledgePurchase(ackParams, billingResult -> {
-            if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+            if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
+                    || billingResult.getResponseCode() == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
                 call.resolve();
             } else {
                 call.reject("Acknowledge failed: " + billingResult.getDebugMessage());
             }
         });
+    }
+
+    private void acknowledgePurchaseNatively(Purchase purchase) {
+        AcknowledgePurchaseParams ackParams = AcknowledgePurchaseParams.newBuilder()
+                .setPurchaseToken(purchase.getPurchaseToken())
+                .build();
+
+        billingClient.acknowledgePurchase(ackParams, billingResult -> {
+            // Best-effort acknowledgment; TS side will also attempt.
+        });
+    }
+
+    @Nullable
+    private PluginCall getSavedPurchaseCall() {
+        if (purchaseCallbackId == null) {
+            return null;
+        }
+        return bridge.getSavedCall(purchaseCallbackId);
+    }
+
+    private void releasePurchaseCall(PluginCall call, JSObject result) {
+        call.resolve(result);
+        call.setKeepAlive(false);
+        bridge.releaseCall(call);
+        purchaseCallbackId = null;
+    }
+
+    private void releasePurchaseCall(PluginCall call, String errorMessage, boolean resolved) {
+        call.reject(errorMessage);
+        call.setKeepAlive(false);
+        bridge.releaseCall(call);
+        purchaseCallbackId = null;
     }
 
     private JSObject purchaseToJson(Purchase purchase) {

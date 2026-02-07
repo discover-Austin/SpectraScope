@@ -1,4 +1,5 @@
-import { Injectable, OnDestroy, signal } from '@angular/core';
+import { Injectable, OnDestroy, inject, signal } from '@angular/core';
+import { MonetizationService } from './monetization.service';
 
 export interface SessionState {
   isActive: boolean;
@@ -6,8 +7,12 @@ export interface SessionState {
   intensity: number;
 }
 
+const FREE_MAX_DURATION = 10;
+
 @Injectable({ providedIn: 'root' })
 export class SessionService implements OnDestroy {
+  private readonly monetization = inject(MonetizationService);
+
   private readonly stateSignal = signal<SessionState>({
     isActive: false,
     minutesRemaining: 10,
@@ -19,6 +24,10 @@ export class SessionService implements OnDestroy {
   readonly state = this.stateSignal.asReadonly();
 
   startSession(durationMinutes: number): void {
+    if (durationMinutes > FREE_MAX_DURATION && !this.monetization.isProOwned()) {
+      return;
+    }
+
     this.clearTimer();
     this.stateSignal.set({
       isActive: true,
@@ -41,6 +50,13 @@ export class SessionService implements OnDestroy {
       ...this.stateSignal(),
       intensity: value
     });
+  }
+
+  applyPreset(value: number): void {
+    if (!this.monetization.isProOwned()) {
+      return;
+    }
+    this.setIntensity(value);
   }
 
   ngOnDestroy(): void {
