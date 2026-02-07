@@ -38,6 +38,13 @@ button:hover {
   box-shadow: 0 10px 24px rgba(106, 208, 255, 0.2);
 }
 
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
 button.secondary {
   background: transparent;
   color: var(--text);

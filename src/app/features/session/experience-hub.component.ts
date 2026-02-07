@@ -4,6 +4,7 @@ import { AudioVisualizerComponent } from '../audio/audio-visualizer.component';
 import { SessionControlsComponent } from './session-controls.component';
 import { GalleryPanelComponent } from '../gallery/gallery-panel.component';
 import { MonetizationService } from '../../core/services/monetization.service';
+import { DisclaimerService } from '../../core/services/disclaimer.service';
 
 @Component({
   selector: 'app-experience-hub',
@@ -27,8 +28,16 @@ import { MonetizationService } from '../../core/services/monetization.service';
         <p class="muted">
           Unlock advanced visual filters, extended session durations, and custom intensity presets.
         </p>
-        <button type="button" (click)="unlockPro()">Unlock Pro</button>
+        <button type="button" (click)="unlockPro()" *ngIf="!monetization.isProOwned()">Unlock Pro</button>
+        <button type="button" class="secondary" (click)="restore()">Restore purchase</button>
+        <p class="muted" *ngIf="monetization.isProOwned()">Pro is active on this device.</p>
       </div>
+    </section>
+
+    <section class="status" *ngIf="monetization.status()">
+      <p [class.error]="monetization.status()?.severity === 'error'">
+        {{ monetization.status()?.message }}
+      </p>
     </section>
 
     <section class="grid">
@@ -45,6 +54,7 @@ import { MonetizationService } from '../../core/services/monetization.service';
       <p class="muted">
         Sessions are designed for entertainment. No claims are made about paranormal activity.
       </p>
+      <p class="muted disclaimer">{{ disclaimer.disclaimer }}</p>
     </section>
   `,
   styles: [
@@ -81,17 +91,37 @@ import { MonetizationService } from '../../core/services/monetization.service';
         gap: 1.5rem;
       }
 
+      .status {
+        background: rgba(106, 208, 255, 0.08);
+        border-radius: 16px;
+        padding: 0.75rem 1rem;
+      }
+
+      .status .error {
+        color: #f7c770;
+      }
+
       .footnote {
         border-top: 1px solid rgba(255, 255, 255, 0.08);
         padding-top: 1.5rem;
+      }
+
+      .disclaimer {
+        font-size: 0.8rem;
+        margin-top: 0.75rem;
       }
     `
   ]
 })
 export class ExperienceHubComponent {
-  private readonly monetization = inject(MonetizationService);
+  readonly monetization = inject(MonetizationService);
+  readonly disclaimer = inject(DisclaimerService);
 
   unlockPro(): void {
-    this.monetization.unlockPro();
+    void this.monetization.purchasePro();
+  }
+
+  restore(): void {
+    void this.monetization.restorePurchases();
   }
 }

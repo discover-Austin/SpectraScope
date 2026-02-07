@@ -23,8 +23,8 @@ export class OnboardingService {
     },
     {
       id: 'boundary',
-      title: 'Reality boundary disclosure',
-      body: 'No detection. No verification. No real-world claims.'
+      title: 'Boundary disclosure',
+      body: 'No detection. No verification. No physical-world claims.'
     },
     {
       id: 'permissions',

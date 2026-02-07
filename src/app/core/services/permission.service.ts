@@ -1,12 +1,27 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
+import { CameraPreview } from '@capacitor-community/camera-preview';
 
 @Injectable({ providedIn: 'root' })
 export class PermissionService {
   readonly cameraCopy = 'Used to render live visual environments during simulation sessions.';
   readonly microphoneCopy = 'Used to drive reactive audio-visual effects during simulation sessions.';
 
-  requestAll(): void {
-    // Placeholder for Capacitor runtime permission prompts.
-    console.info('Requesting camera and microphone permissions');
+  private readonly statusSignal = signal<string | null>(null);
+  readonly status = this.statusSignal.asReadonly();
+  private readonly grantedSignal = signal(false);
+  readonly granted = this.grantedSignal.asReadonly();
+
+  async requestAll(): Promise<void> {
+    try {
+      await CameraPreview.requestPermissions();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      this.grantedSignal.set(true);
+      this.statusSignal.set('Permissions granted.');
+    } catch (error) {
+      this.grantedSignal.set(false);
+      this.statusSignal.set('Permissions were not granted.');
+      console.error(error);
+    }
   }
 }

@@ -1,21 +1,32 @@
-import { Component } from '@angular/core';
-import { NgFor } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { NgFor, NgIf } from '@angular/common';
+import { GalleryService } from '../../core/services/gallery.service';
 
 @Component({
   selector: 'app-gallery-panel',
   standalone: true,
-  imports: [NgFor],
+  imports: [NgFor, NgIf],
   template: `
     <section class="panel">
       <header>
         <h2>Local gallery</h2>
-        <button type="button" class="ghost">Clear all</button>
+        <button type="button" class="ghost" (click)="clear()" [disabled]="gallery.items().length === 0">
+          Clear all
+        </button>
       </header>
       <div class="tiles">
-        <div class="tile" *ngFor="let tile of tiles">
-          <span>Manual capture</span>
-          <span class="muted">Stored locally</span>
-        </div>
+        <ng-container *ngIf="gallery.items().length > 0; else emptyState">
+          <div class="tile" *ngFor="let tile of gallery.items()">
+            <img [src]="tile" alt="Manual capture preview">
+            <span class="muted">Stored locally</span>
+          </div>
+        </ng-container>
+        <ng-template #emptyState>
+          <div class="tile empty">
+            <span>No manual captures yet.</span>
+            <span class="muted">Start a session to save images.</span>
+          </div>
+        </ng-template>
       </div>
       <p class="muted">Only manual captures appear here.</p>
     </section>
@@ -50,6 +61,18 @@ import { NgFor } from '@angular/common';
         gap: 0.5rem;
       }
 
+      img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 12px;
+      }
+
+      .empty {
+        place-items: center;
+        text-align: center;
+      }
+
       .muted {
         color: var(--muted);
       }
@@ -57,5 +80,9 @@ import { NgFor } from '@angular/common';
   ]
 })
 export class GalleryPanelComponent {
-  tiles = Array.from({ length: 4 });
+  readonly gallery = inject(GalleryService);
+
+  clear(): void {
+    this.gallery.clear();
+  }
 }

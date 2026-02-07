@@ -26,6 +26,7 @@
           </div>
           <p class="muted">No audio or video is stored or transmitted.</p>
           <button type="button" class="secondary" (click)="openPermissions()">Enable permissions</button>
+          <p class="muted" *ngIf="permissionService.status()">{{ permissionService.status() }}</p>
         </div>
       </ng-container>
 

@@ -1,8 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject } from '@angular/core';
+import { NgIf, NgFor } from '@angular/common';
+import { CameraService } from '../../core/services/camera.service';
+import { GalleryService } from '../../core/services/gallery.service';
+import { MonetizationService } from '../../core/services/monetization.service';
+import { PermissionService } from '../../core/services/permission.service';
 
 @Component({
   selector: 'app-camera-panel',
   standalone: true,
+  imports: [NgIf, NgFor],
   template: `
     <section class="panel">
       <header>
@@ -10,16 +16,48 @@ import { Component } from '@angular/core';
         <p class="status">Session Active</p>
       </header>
       <div class="viewport">
+        <div id="camera-preview" class="camera-preview"></div>
         <div class="overlay"></div>
         <div class="readout">
           <span>Infrared palette</span>
           <span>Visual Noise Level: 62%</span>
         </div>
       </div>
+      <div class="filters">
+        <div>
+          <h4>Core filters</h4>
+          <div class="chip-row">
+            <span class="chip">Low-light grain</span>
+            <span class="chip">Infrared palette</span>
+            <span class="chip">Frame distortion</span>
+          </div>
+        </div>
+        <div>
+          <h4>Advanced filters</h4>
+          <div class="chip-row">
+            <span class="chip locked" *ngFor="let filter of advancedFilters">
+              {{ filter }}
+              <span *ngIf="!monetization.isProOwned()">Pro</span>
+            </span>
+          </div>
+          <p class="muted" *ngIf="!monetization.isProOwned()">
+            Advanced filters unlock with SpectraScope Pro.
+          </p>
+        </div>
+      </div>
       <footer>
-        <button type="button" class="secondary">Manual capture</button>
+        <button
+          type="button"
+          class="secondary"
+          (click)="capture()"
+          [disabled]="!permissions.granted()"
+        >
+          Manual capture
+        </button>
         <span class="muted">No automatic saving.</span>
       </footer>
+      <p class="muted" *ngIf="!permissions.granted()">Camera permission required.</p>
+      <p class="muted" *ngIf="camera.state().error">{{ camera.state().error }}</p>
     </section>
   `,
   styles: [
@@ -52,6 +90,12 @@ import { Component } from '@angular/core';
           linear-gradient(140deg, rgba(5, 10, 20, 0.9), rgba(25, 35, 48, 0.9));
       }
 
+      .camera-preview {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+      }
+
       .overlay {
         position: absolute;
         inset: 0;
@@ -79,6 +123,29 @@ import { Component } from '@angular/core';
         color: var(--text);
       }
 
+      .filters {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      .chip {
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .chip.locked {
+        opacity: 0.6;
+      }
+
       footer {
         display: flex;
         justify-content: space-between;
@@ -92,4 +159,34 @@ import { Component } from '@angular/core';
     `
   ]
 })
-export class CameraPanelComponent {}
+export class CameraPanelComponent implements OnInit, OnDestroy {
+  readonly camera = inject(CameraService);
+  readonly gallery = inject(GalleryService);
+  readonly monetization = inject(MonetizationService);
+  readonly permissions = inject(PermissionService);
+  readonly advancedFilters = ['Thermal bloom', 'Spectral edge', 'Echo trace'];
+
+  ngOnInit(): void {
+    effect(() => {
+      if (this.permissions.granted()) {
+        void this.camera.startPreview('camera-preview');
+      } else {
+        void this.camera.stopPreview();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    void this.camera.stopPreview();
+  }
+
+  async capture(): Promise<void> {
+    if (!this.permissions.granted()) {
+      return;
+    }
+    const image = await this.camera.capture();
+    if (image) {
+      this.gallery.addItem(image);
+    }
+  }
+}

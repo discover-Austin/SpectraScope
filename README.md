@@ -11,7 +11,7 @@ SpectraScope: Night Sessions is an atmospheric entertainment app that delivers i
 ## First-launch experience
 
 1. Atmospheric intro
-2. Reality boundary disclosure
+2. Boundary disclosure
 3. Permissions explanation
 4. Acknowledgment checkpoint
 
@@ -28,6 +28,7 @@ No audio or video is stored or transmitted.
 
 - Paid app download
 - Optional non-consumable in-app purchase: SpectraScope Pro
+- SpectraScope Pro unlocks advanced filters, extended sessions, and custom intensity presets
 
 ## Build
 
@@ -40,3 +41,7 @@ npx cap sync android
 ## Privacy policy
 
 The local privacy policy is available at `src/assets/privacy-policy.html`.
+
+## Play Store metadata
+
+Play Store listing text and data safety notes are in `docs/play-store-metadata.md`.

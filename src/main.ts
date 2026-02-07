@@ -1,4 +1,4 @@
-import { enableProdMode, importProvidersFrom } from '@angular/core';
+import { enableProdMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
@@ -10,5 +10,5 @@ if (typeof process !== 'undefined' && process.env['NODE_ENV'] === 'production') 
 }
 
 bootstrapApplication(AppComponent, {
-  providers: [provideRouter(appRoutes), provideAnimations(), importProvidersFrom()]
+  providers: [provideRouter(appRoutes), provideAnimations()]
 }).catch((err) => console.error(err));

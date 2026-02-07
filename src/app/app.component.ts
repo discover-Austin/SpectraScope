@@ -1,14 +1,15 @@
 import { Component, computed, inject } from '@angular/core';
-import { NgIf, NgFor } from '@angular/common';
+import { NgIf } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { DisclaimerService } from './core/services/disclaimer.service';
 import { PermissionService } from './core/services/permission.service';
 import { OnboardingService } from './core/services/onboarding.service';
+import { MonetizationService } from './core/services/monetization.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [NgIf, NgFor, RouterOutlet],
+  imports: [NgIf, RouterOutlet],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
@@ -16,6 +17,7 @@ export class AppComponent {
   private readonly disclaimerService = inject(DisclaimerService);
   readonly permissionService = inject(PermissionService);
   private readonly onboardingService = inject(OnboardingService);
+  private readonly monetizationService = inject(MonetizationService);
 
   readonly disclaimer = this.disclaimerService.disclaimer;
   readonly steps = this.onboardingService.steps;
@@ -25,6 +27,10 @@ export class AppComponent {
     this.activeStep() < this.steps.length - 1 && this.onboardingService.canAdvance()
   );
   readonly isFinalStep = computed(() => this.activeStep() === this.steps.length - 1);
+
+  constructor() {
+    void this.monetizationService.initialize();
+  }
 
   advance(): void {
     this.onboardingService.advance();
@@ -39,7 +45,7 @@ export class AppComponent {
   }
 
   openPermissions(): void {
-    this.permissionService.requestAll();
+    void this.permissionService.requestAll();
   }
 
   restart(): void {

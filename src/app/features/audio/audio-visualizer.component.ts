@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject } from '@angular/core';
 import { NgFor } from '@angular/common';
+import { AudioSignalService } from '../../core/services/audio-signal.service';
+import { PermissionService } from '../../core/services/permission.service';
 
 @Component({
   selector: 'app-audio-visualizer',
@@ -12,11 +14,19 @@ import { NgFor } from '@angular/common';
         <p class="muted">Reactive waveform</p>
       </header>
       <div class="waveform">
-        <div class="line" *ngFor="let bar of bars"></div>
+        <div
+          class="line"
+          *ngFor="let bar of bars; let i = index"
+          [style.height.%]="barHeights[i]"
+        ></div>
       </div>
       <div class="indicators">
         <span>Ambient pulse</span>
-        <span class="muted">No recording</span>
+        <span class="muted" *ngIf="signal.state().active">Live amplitude</span>
+        <span class="muted" *ngIf="!signal.state().active && permissions.granted()">
+          No recording
+        </span>
+        <span class="muted" *ngIf="!permissions.granted()">Microphone permission required.</span>
       </div>
     </section>
   `,
@@ -78,6 +88,39 @@ import { NgFor } from '@angular/common';
     `
   ]
 })
-export class AudioVisualizerComponent {
-  bars = Array.from({ length: 18 });
+export class AudioVisualizerComponent implements OnInit, OnDestroy {
+  readonly signal = inject(AudioSignalService);
+  readonly permissions = inject(PermissionService);
+  readonly bars = Array.from({ length: 18 });
+  barHeights = this.bars.map(() => 40);
+
+  private rafId: number | null = null;
+
+  ngOnInit(): void {
+    effect(() => {
+      if (this.permissions.granted()) {
+        void this.signal.start();
+      } else {
+        this.signal.stop();
+      }
+    });
+    this.animate();
+  }
+
+  ngOnDestroy(): void {
+    this.signal.stop();
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+    }
+  }
+
+  private animate(): void {
+    const amplitude = this.signal.state().amplitude;
+    this.barHeights = this.bars.map((_, index) => {
+      const offset = 30 + index * 3;
+      const variance = Math.max(15, Math.min(90, (amplitude * 120 + offset) % 90));
+      return variance;
+    });
+    this.rafId = requestAnimationFrame(() => this.animate());
+  }
 }
