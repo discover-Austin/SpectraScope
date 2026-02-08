@@ -92,20 +92,21 @@ export class AudioVisualizerComponent implements OnDestroy {
   readonly signal = inject(AudioSignalService);
   readonly permissions = inject(PermissionService);
   readonly bars = Array.from({ length: 18 });
-  barHeights = this.bars.map(() => 40);
+  barHeights: number[] = new Array(18).fill(40);
 
   private rafId: number | null = null;
+  private audioTransition: Promise<void> = Promise.resolve();
   private readonly pauseHandler = (): void => { this.signal.stop(); };
   private readonly resumeHandler = (): void => {
     if (this.permissions.granted()) {
-      void this.signal.start();
+      this.audioTransition = this.audioTransition.then(() => this.signal.start());
     }
   };
 
   constructor() {
     effect(() => {
       if (this.permissions.granted()) {
-        void this.signal.start();
+        this.audioTransition = this.audioTransition.then(() => this.signal.start());
       } else {
         this.signal.stop();
       }
@@ -117,7 +118,7 @@ export class AudioVisualizerComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.signal.stop();
-    if (this.rafId) {
+    if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
     }
     document.removeEventListener('pause', this.pauseHandler);
@@ -126,11 +127,10 @@ export class AudioVisualizerComponent implements OnDestroy {
 
   private animate(): void {
     const amplitude = this.signal.state().amplitude;
-    this.barHeights = this.bars.map((_, index) => {
-      const offset = 30 + index * 3;
-      const variance = Math.max(15, Math.min(90, (amplitude * 120 + offset) % 90));
-      return variance;
-    });
+    for (let i = 0; i < this.barHeights.length; i++) {
+      const offset = 30 + i * 3;
+      this.barHeights[i] = Math.max(15, Math.min(90, (amplitude * 120 + offset) % 90));
+    }
     this.rafId = requestAnimationFrame(() => this.animate());
   }
 }

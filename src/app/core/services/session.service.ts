@@ -5,6 +5,7 @@ export interface SessionState {
   isActive: boolean;
   minutesRemaining: number;
   intensity: number;
+  error: string | null;
 }
 
 const FREE_MAX_DURATION = 10;
@@ -16,7 +17,8 @@ export class SessionService implements OnDestroy {
   private readonly stateSignal = signal<SessionState>({
     isActive: false,
     minutesRemaining: 10,
-    intensity: 0.6
+    intensity: 0.6,
+    error: null
   });
 
   private timerId: ReturnType<typeof setInterval> | null = null;
@@ -24,7 +26,15 @@ export class SessionService implements OnDestroy {
   readonly state = this.stateSignal.asReadonly();
 
   startSession(durationMinutes: number): void {
+    if (durationMinutes <= 0 || !Number.isFinite(durationMinutes)) {
+      return;
+    }
+
     if (durationMinutes > FREE_MAX_DURATION && !this.monetization.isProOwned()) {
+      this.stateSignal.set({
+        ...this.stateSignal(),
+        error: 'Extended durations require SpectraScope Pro.'
+      });
       return;
     }
 
@@ -32,7 +42,8 @@ export class SessionService implements OnDestroy {
     this.stateSignal.set({
       isActive: true,
       minutesRemaining: durationMinutes,
-      intensity: this.stateSignal().intensity
+      intensity: this.stateSignal().intensity,
+      error: null
     });
     this.timerId = setInterval(() => this.tick(), 60_000);
   }
@@ -41,7 +52,8 @@ export class SessionService implements OnDestroy {
     this.clearTimer();
     this.stateSignal.set({
       ...this.stateSignal(),
-      isActive: false
+      isActive: false,
+      error: null
     });
   }
 

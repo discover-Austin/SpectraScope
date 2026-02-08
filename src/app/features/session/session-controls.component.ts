@@ -69,6 +69,7 @@ import { MonetizationService } from '../../core/services/monetization.service';
         <p>Session completed</p>
         <p class="muted">No analysis provided.</p>
       </div>
+      <p class="error" *ngIf="session.state().error">{{ session.state().error }}</p>
     </section>
   `,
   styles: [
@@ -128,6 +129,11 @@ import { MonetizationService } from '../../core/services/monetization.service';
       .locked span {
         margin-left: 0.5rem;
         font-size: 0.75rem;
+      }
+
+      .error {
+        color: #f7c770;
+        font-size: 0.85rem;
       }
     `
   ]

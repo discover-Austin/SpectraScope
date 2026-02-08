@@ -83,6 +83,8 @@ export class GalleryPanelComponent {
   readonly gallery = inject(GalleryService);
 
   clear(): void {
-    this.gallery.clear();
+    if (confirm('Clear all captures? This cannot be undone.')) {
+      this.gallery.clear();
+    }
   }
 }

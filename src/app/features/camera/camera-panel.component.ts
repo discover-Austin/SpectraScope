@@ -166,19 +166,23 @@ export class CameraPanelComponent implements OnDestroy {
   readonly permissions = inject(PermissionService);
   readonly advancedFilters = ['Thermal bloom', 'Spectral edge', 'Echo trace'];
 
-  private readonly pauseHandler = (): void => { void this.camera.stopPreview(); };
+  private cameraTransition: Promise<void> = Promise.resolve();
+
+  private readonly pauseHandler = (): void => {
+    this.cameraTransition = this.cameraTransition.then(() => this.camera.stopPreview());
+  };
   private readonly resumeHandler = (): void => {
     if (this.permissions.granted() && !this.camera.state().active) {
-      void this.camera.startPreview('camera-preview');
+      this.cameraTransition = this.cameraTransition.then(() => this.camera.startPreview('camera-preview'));
     }
   };
 
   constructor() {
     effect(() => {
       if (this.permissions.granted()) {
-        void this.camera.startPreview('camera-preview');
+        this.cameraTransition = this.cameraTransition.then(() => this.camera.startPreview('camera-preview'));
       } else {
-        void this.camera.stopPreview();
+        this.cameraTransition = this.cameraTransition.then(() => this.camera.stopPreview());
       }
     });
     document.addEventListener('pause', this.pauseHandler);

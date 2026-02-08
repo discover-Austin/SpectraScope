@@ -13,6 +13,7 @@ export class MonetizationService {
   private readonly statusSignal = signal<BillingStatus | null>(null);
   private readonly readySignal = signal(false);
   private readonly productSignal = signal<IapProduct | null>(null);
+  private listenerHandles: Array<{ remove: () => Promise<void> }> = [];
 
   readonly isProOwned = this.isProOwnedSignal.asReadonly();
   readonly status = this.statusSignal.asReadonly();
@@ -107,18 +108,25 @@ export class MonetizationService {
   }
 
   private async attachListeners(): Promise<void> {
-    await this.iap.addListener('purchaseUpdated', async (event: { purchase?: IapPurchase }) => {
+    for (const handle of this.listenerHandles) {
+      await handle.remove();
+    }
+    this.listenerHandles = [];
+
+    const purchaseHandle = await this.iap.addListener('purchaseUpdated', async (event: { purchase?: IapPurchase }) => {
       if (event.purchase) {
         await this.acknowledge(event.purchase);
       }
     });
+    this.listenerHandles.push(purchaseHandle);
 
-    await this.iap.addListener('purchaseError', (event: { message?: string }) => {
+    const errorHandle = await this.iap.addListener('purchaseError', (event: { message?: string }) => {
       this.statusSignal.set({
         message: event.message ?? 'A billing error occurred.',
         severity: 'warning'
       });
     });
+    this.listenerHandles.push(errorHandle);
   }
 
   private setOwned(value: boolean): void {

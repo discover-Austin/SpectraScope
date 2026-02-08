@@ -8,10 +8,21 @@ export class GalleryService {
 
   readonly items = this.itemsSignal.asReadonly();
 
-  addItem(dataUrl: string): void {
+  addItem(dataUrl: string): boolean {
     const updated = [dataUrl, ...this.itemsSignal()].slice(0, 24);
+    if (!this.persist(updated)) {
+      // Storage full - evict oldest items until it fits
+      for (let limit = updated.length - 1; limit >= 1; limit--) {
+        const trimmed = updated.slice(0, limit);
+        if (this.persist(trimmed)) {
+          this.itemsSignal.set(trimmed);
+          return true;
+        }
+      }
+      return false;
+    }
     this.itemsSignal.set(updated);
-    this.persist(updated);
+    return true;
   }
 
   clear(): void {
@@ -19,8 +30,13 @@ export class GalleryService {
     localStorage.removeItem(STORAGE_KEY);
   }
 
-  private persist(items: string[]): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  private persist(items: string[]): boolean {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private readItems(): string[] {
